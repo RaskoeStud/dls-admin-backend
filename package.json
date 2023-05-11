@@ -1,7 +1,8 @@
 {
   "type": "module",
   "scripts": {
-    "runDocker": "nodemon app.js"
+    "runDocker": "nodemon app.js",
+    "start": "node app.js"
   },
   "dependencies": {
     "amqplib": "^0.10.3",
