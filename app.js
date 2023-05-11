@@ -1,5 +1,6 @@
 import express from "express";
 import userRouter from "./routers/admin-router.js";
+import customerRouter from "./routers/customer-router.js";
 import amqp from 'amqplib/callback_api.js';
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
@@ -7,6 +8,7 @@ import swaggerJsdoc from "swagger-jsdoc";
 const app = express();
 app.use(express.json());
 app.use(userRouter);
+app.use(customerRouter);
 
 
 

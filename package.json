@@ -1,6 +1,7 @@
 {
   "type": "module",
   "scripts": {
+    "start-dev": "nodemon app.js",
     "runDocker": "nodemon app.js",
     "start": "node app.js"
   },

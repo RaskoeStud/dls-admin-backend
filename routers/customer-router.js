@@ -1,52 +1,58 @@
 import express from "express";
 import conn from "./startConnection.js";
+import amqp from 'amqplib/callback_api.js';
 
 const router = express.Router();
 router.use(express.json());
 
 function setRabbitMQ (queueName, msg) {
     amqp.connect(process.env.CLOUDAMQP_URL + "?heartbeat=60", (err, conR) => {
-        if(err) {
+        let message;
+        if (err) {
             throw err;
         }
-        conR.createChannel((err, ch) => {
-            if(err) {
-                throw err;
+        conR.createChannel(function(err1, channel) {
+            if (err1) {
+            throw err1;
             }
-            ch.assertQueue(queueName, {
-                exclusive: true,
-                durable: false // if true, the queue will survive a broker restart
-            });
-
+            channel.assertQueue('', {
+                exclusive: true
+            }, function(error2, q) {
+            if (error2) {
+                throw error2;
+            }
+            let correlationId = generateUuid();
+        
+        
             channel.consume(q.queue, function(msg) {
                 if (msg.properties.correlationId == correlationId) {
-                  console.log(msg);
-                  setTimeout(function() {
-                    connection.close();
-                    process.exit(0)
-                  }, 500);
+                console.log(' [.] Got %s', msg.content.toString());
+                let message = msg.content.toString();
+                setTimeout(function() {
+                    conR.close();
+                }, 500);
                 }
             }, {
                 noAck: true
             });
-        
-            channel.sendToQueue('customer_control_message',
-            Buffer.from(num.toString()),{
+            let num = msg;
+            channel.sendToQueue(queueName,Buffer.from(num.toString()),{
                 correlationId: correlationId,
-                replyTo: q.queue 
+                replyTo: q.queue });
             });
-
-            ch.sendToQueue(queueName, Buffer.from(msg));
-            setTimeout(() => {
-                conR.close();
-            }, 500);
         });
+        return message;
     });
 }
 
+function generateUuid() {
+    return Math.random().toString() +Math.random().toString() +Math.random().toString();
+}
+
 // Get all customers
-router.get("/admins/customers/", async (req, res) => {
-    setRabbitMQ(customer_control_message, "read-all");
+router.get("/rabbit/customers/", async (req, res) => {
+    setRabbitMQ("customer_control_message", "read-all");
+    res.status(200).send("Request sent to RabbitMQ");
 });
 
 
@@ -153,25 +159,3 @@ router.post("/delete_admin", async (req, res) => {
 });
 
 export default router;
-
-amqp.connect(process.env.CLOUDAMQP_URL + "?heartbeat=60", (err, conn) => {
-    if(err) {
-        throw err;
-    }
-    conn.createChannel((err, ch) => {
-        if(err) {
-            throw err;
-        }
-        let queueName = 'customer_control_message';
-        let msg = req.body.msg ;
-        ch.assertQueue(queueName, {
-            durable: false // if true, the queue will survive a broker restart
-        });
-        ch.sendToQueue(queueName, Buffer.from(msg));
-        console.log(`Sent: ${msg}`)
-        setTimeout(() => {
-            res.sendStatus(200)
-            conn.close();
-        }, 500);
-    });
-});
