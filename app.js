@@ -1,5 +1,5 @@
 import express from "express";
-import userRouter from "./routers/user-router.js";
+import userRouter from "./routers/admin-router.js";
 import amqp from 'amqplib/callback_api.js';
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
@@ -20,7 +20,7 @@ const options = {
         },
         servers: [
             {
-                url: "http://localhost:3000",
+                url: process.env.SWAGGER_URL || "http://localhost:3000",
             },
         ],
     },

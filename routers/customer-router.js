@@ -4,30 +4,53 @@ import conn from "./startConnection.js";
 const router = express.Router();
 router.use(express.json());
 
-// Default route
-router.get("/", (req, res) =>{
-    res.send("Welcome to admin frontpage!");
-});
-
-
-// Get all admins
-router.get("/admins", async (req, res) => {
-    conn.getConnection(function (err, connection) {
-        connection.query('SELECT * FROM admins a JOIN admins_data ad ON a.id = ad.admin_id WHERE (ad.admin_id, ad.snap_timestamp) IN (SELECT admin_id, MAX(snap_timestamp) FROM admins_data GROUP BY admin_id) AND a.deleted=false;', function (err, results) {
-            if (err) {
-                connection.release();
+function setRabbitMQ (queueName, msg) {
+    amqp.connect(process.env.CLOUDAMQP_URL + "?heartbeat=60", (err, conR) => {
+        if(err) {
+            throw err;
+        }
+        conR.createChannel((err, ch) => {
+            if(err) {
                 throw err;
             }
-            else console.log('Selected ' + results.length + ' row(s).');
-            res.status(200).send(results);
-            connection.release();
-            console.log('--- Selecting all active admins done! ---');
-            
+            ch.assertQueue(queueName, {
+                exclusive: true,
+                durable: false // if true, the queue will survive a broker restart
+            });
+
+            channel.consume(q.queue, function(msg) {
+                if (msg.properties.correlationId == correlationId) {
+                  console.log(msg);
+                  setTimeout(function() {
+                    connection.close();
+                    process.exit(0)
+                  }, 500);
+                }
+            }, {
+                noAck: true
+            });
+        
+            channel.sendToQueue('customer_control_message',
+            Buffer.from(num.toString()),{
+                correlationId: correlationId,
+                replyTo: q.queue 
+            });
+
+            ch.sendToQueue(queueName, Buffer.from(msg));
+            setTimeout(() => {
+                conR.close();
+            }, 500);
         });
     });
+}
+
+// Get all customers
+router.get("/admins/customers/", async (req, res) => {
+    setRabbitMQ(customer_control_message, "read-all");
 });
 
-// Get a single admin by idf
+
+// Get a single admin by id
 router.get("/admins/:id", async (req, res) => { 
     conn.getConnection(function (err, connection) {
         if(err) throw err;
@@ -130,3 +153,25 @@ router.post("/delete_admin", async (req, res) => {
 });
 
 export default router;
+
+amqp.connect(process.env.CLOUDAMQP_URL + "?heartbeat=60", (err, conn) => {
+    if(err) {
+        throw err;
+    }
+    conn.createChannel((err, ch) => {
+        if(err) {
+            throw err;
+        }
+        let queueName = 'customer_control_message';
+        let msg = req.body.msg ;
+        ch.assertQueue(queueName, {
+            durable: false // if true, the queue will survive a broker restart
+        });
+        ch.sendToQueue(queueName, Buffer.from(msg));
+        console.log(`Sent: ${msg}`)
+        setTimeout(() => {
+            res.sendStatus(200)
+            conn.close();
+        }, 500);
+    });
+});
