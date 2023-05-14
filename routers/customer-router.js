@@ -26,8 +26,7 @@ function setRabbitMQ (queueName, msg) {
         
             channel.consume(q.queue, function(msg) {
                 if (msg.properties.correlationId == correlationId) {
-                console.log(' [.] Got %s', msg.content.toString());
-                let message = msg.content.toString();
+                console.log(' [.] Recived this data from customer-backend: %s', msg.content.toString());
                 setTimeout(function() {
                     conR.close();
                 }, 500);
@@ -35,8 +34,7 @@ function setRabbitMQ (queueName, msg) {
             }, {
                 noAck: true
             });
-            let num = msg;
-            channel.sendToQueue(queueName,Buffer.from(num.toString()),{
+            channel.sendToQueue(queueName,Buffer.from(msg.toString()),{
                 correlationId: correlationId,
                 replyTo: q.queue });
             });
@@ -51,7 +49,7 @@ function generateUuid() {
 
 // Get all customers
 router.get("/rabbit/customers/", async (req, res) => {
-    setRabbitMQ("customer_control_message", "read-all");
+    setRabbitMQ("customer_control_message", req.body.msg);
     res.status(200).send("Request sent to RabbitMQ");
 });
 
