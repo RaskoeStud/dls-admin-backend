@@ -1,0 +1,51 @@
+#graphql
+  # Comments in GraphQL strings (such as this one) start with the hash (#) symbol.
+
+  # This "Book" type defines the queryable fields for every book in our data source.
+
+  type Book {
+    title: String
+    author: String
+  }
+
+  # The "Query" type is special: it lists all of the available queries that
+  # clients can execute, along with the return type for each. In this
+  # case, the "books" query returns an array of zero or more Books (defined above).
+# --- Queries ---
+type Query {   
+    GetAdmins: [AdminCombined]
+    GetAdminById(admin_id: Int!): AdminCombinedById
+    GetDeletedAdmins: [AdminCombined]
+    CreateAdmin(username: String!, email: String!, pass: String!): AdminCombined
+    UpdateAdmin(admin_id: Int!, username: String!, email: String!, pass: String!): AdminCombined
+    DeleteAdmin(admin_id: Int!): AdminCombined
+}
+
+# --- Mutations ---
+type AdminCombined {
+    id: ID
+    created_at: String
+    deleted: Boolean
+    deleted_at: String
+    admin_id: Int
+    username: String
+    email: String
+    pass: String
+    is_admin: Boolean
+    is_superuser: Boolean
+    snap_timestamp: String
+}
+type AdminCombinedById {
+    id: ID
+    created_at: String
+    deleted: Boolean
+    deleted_at: String
+    admin_id: Int!
+    username: String
+    email: String
+    pass: String
+    is_admin: Boolean
+    is_superuser: Boolean
+    snap_timestamp: String
+}
+

@@ -49,7 +49,7 @@ function generateUuid() {
 
 // Get all customers
 router.get("/rabbit/customers/", async (req, res) => {
-    setRabbitMQ("customer_control_message", req.body.msg);
+    setRabbitMQ("customer_control_message", "read-deleted");
     res.status(200).send("Request sent to RabbitMQ");
 });
 
