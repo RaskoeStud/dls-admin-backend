@@ -5,7 +5,7 @@ import amqp from 'amqplib/callback_api.js';
 const router = express.Router();
 router.use(express.json());
 
-function setRabbitMQ (queueName, msg) {
+function setRabbitMQ (queueName, msg, body) {
     amqp.connect(process.env.CLOUDAMQP_URL + "?heartbeat=60", (err, conR) => {
         let message;
         if (err) {
@@ -26,7 +26,7 @@ function setRabbitMQ (queueName, msg) {
         
             channel.consume(q.queue, function(msg) {
                 if (msg.properties.correlationId == correlationId) {
-                console.log(' [.] Recived this data from customer-backend: %s', msg.content.toString());
+                console.log(' [.] Received this data from customer-backend: %s', msg.content.toString());
                 setTimeout(function() {
                     conR.close();
                 }, 500);
@@ -34,9 +34,15 @@ function setRabbitMQ (queueName, msg) {
             }, {
                 noAck: true
             });
-            channel.sendToQueue(queueName,Buffer.from(msg.toString()),{
-                correlationId: correlationId,
-                replyTo: q.queue });
+            const messageHeader = {
+                body: body,
+            };
+                channel.sendToQueue(queueName,Buffer.from(msg.toString()),{
+                    headers: messageHeader, 
+                    correlationId: correlationId,
+                    replyTo: q.queue,
+                });
+                console.log(`Sent: ${msg}`)
             });
         });
         return message;
@@ -48,11 +54,10 @@ function generateUuid() {
 }
 
 // Get all customers
-router.get("/rabbit/customers/", async (req, res) => {
-    setRabbitMQ("customer_control_message", req.body.msg);
+router.post("/rabbit/customers/", async (req, res) => {
+    setRabbitMQ("customer_control_message", req.body.msg, req.body);
     res.status(200).send("Request sent to RabbitMQ");
 });
-
 
 // Get a single admin by id
 router.get("/admins/:id", async (req, res) => { 
