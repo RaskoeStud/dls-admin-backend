@@ -115,6 +115,7 @@ export async function createAdmin(values) {
         
         console.log('--- admin has been added! ---\n ', results);
         connection.release();
+        return results;
     }catch(err){
         connection.release();
         console.log(err);

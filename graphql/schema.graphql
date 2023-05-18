@@ -13,12 +13,22 @@
   # case, the "books" query returns an array of zero or more Books (defined above).
 # --- Queries ---
 type Query {   
+    # Admins
     GetAdmins: [AdminCombined]
     GetAdminById(admin_id: Int!): AdminCombinedById
     GetDeletedAdmins: [AdminCombined]
     CreateAdmin(username: String!, email: String!, pass: String!): AdminCombined
     UpdateAdmin(admin_id: Int!, username: String!, email: String!, pass: String!): AdminCombined
     DeleteAdmin(admin_id: Int!): AdminCombined
+    # Customers
+    GetCustomers: [CustomerCombined]
+    GetCustomerById(customer_id: Int!): CustomerCombined
+    GetDeletedCustomers: [CustomerCombined]
+    CreateCustomer(firstname: String!, lastname: String!, age: Int!, email: String!, password: String!): CustomerCreationCombined
+    # Look into properly not setting all as required
+    UpdateCustomer(customer_id: Int!, firstname: String!, lastname: String!, age: Int!, email: String!, password: String!): CustomerCreationCombined
+    DeleteCustomer(customer_id: Int!): CustomerCombined
+
 }
 
 # --- Mutations ---
@@ -49,3 +59,29 @@ type AdminCombinedById {
     snap_timestamp: String
 }
 
+type CustomerCombined {
+    id: ID
+    created_at: String
+    deleted: Boolean
+    deleted_at: String
+    customer_id: Int
+    first_name: String
+    last_name: String
+    age: Int
+    email: String
+    password: String
+    snap_timestamp: String
+}
+type CustomerCreationCombined {
+    id: ID
+    created_at: String
+    deleted: Boolean
+    deleted_at: String
+    customer_id: Int
+    firstname: String
+    lastname: String
+    age: Int
+    email: String
+    password: String
+    snap_timestamp: String
+}

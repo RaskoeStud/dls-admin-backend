@@ -2,7 +2,7 @@ import express from "express";
 import { getAdmins, getAdminById, getDeletedAdmins, createAdmin, updateAdmin, deleteAdmin } from "./routers/admin-router.js";
 import userRouter from "./routers/admin-router.js";
 import customerRouter from "./routers/customer-router.js";
-import amqp from 'amqplib/callback_api.js';
+import { sendToQueueFunc } from "./routers/customer-router.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
 
@@ -17,23 +17,6 @@ app.use(customerRouter);
 
 // GRAPHQL
 const typeDefs = fs.readFileSync('./graphql/schema.graphql', 'utf8');
-
-const adminData = [
-    {
-        id: 1,
-        name: "Admin 1",
-        email: ""
-    },
-    {
-        id: 2,
-        name: "Admin 2",
-        email: ""
-    },
-    {
-        id: 3,
-        name: "Admin 3",
-        email: ""
-    }];
 
 const resolvers = {
     Query: {
@@ -87,6 +70,64 @@ const resolvers = {
             }catch(err){
                 console.log(err);
             }
+        },
+        GetCustomers: async () => {
+            try{
+                const msg = {typeOfMessage:"readAll", body: {"Read": "GotAll"}};
+                return await sendToQueueFunc(msg);
+            } catch(err) {
+                console.log(err);
+            }
+        },
+        GetCustomerById: async (_, {customer_id}) => {
+            try{
+                const msg = {typeOfMessage:"readSingle", body: {id: customer_id}};
+                const result = await sendToQueueFunc(msg);
+                console.log("THIS IS THE RESULT: ", result);
+                return result;
+            }catch(err){
+                console.log(err);
+            }
+        },
+        GetDeletedCustomers: async () => {
+            try{
+                const msg = {typeOfMessage:"readDeleted", body: {Read: "Deleted"}};
+                const result = await sendToQueueFunc(msg);
+                console.log("THIS IS THE RESULT: ", result);
+                return result;
+            } catch(err) {
+                console.log(err);
+            }
+        },
+        CreateCustomer: async (_, {firstname, lastname, age, email, password}) => {
+            try{
+                const msg = {typeOfMessage:"create", body: {firstname, lastname, age, email, password}};
+                const result = await sendToQueueFunc(msg);
+                console.log("THIS IS THE RESULT: ", result);
+                return result;
+            } catch(err) {
+                console.log(err);
+            }
+        },
+        UpdateCustomer: async (_, {customer_id, firstname, lastname, age, email, password}) => {
+            try{
+                const msg = {typeOfMessage:"update", body: {customer_id, firstname, lastname, age, email, password}};
+                const result = await sendToQueueFunc(msg);
+                console.log("THIS IS THE RESULT: ", result);
+                return result;
+            } catch(err) {
+                console.log(err);
+            }
+        },
+        DeleteCustomer: async (_, {customer_id}) => {
+            try{
+                const msg = {typeOfMessage:"delete", body: {id: customer_id}};
+                const result = await sendToQueueFunc(msg);
+                console.log("THIS IS THE RESULT: ", result);
+                return result;
+            } catch(err) {
+                console.log(err);
+            }
         }
     },
 };
@@ -118,31 +159,6 @@ const options = {
 
 const specs = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
-
-// RABBITMQ
-app.post("/rabbitmq", (req, res) => {
-    amqp.connect(process.env.CLOUDAMQP_URL + "?heartbeat=60", (err, conn) => {
-        if(err) {
-            throw err;
-        }
-        conn.createChannel((err, ch) => {
-            if(err) {
-                throw err;
-            }
-            let queueName = 'servermessage';
-            let msg = req.body.msg || "Hello World!";
-            ch.assertQueue(queueName, {
-                durable: false // if true, the queue will survive a broker restart
-            });
-            ch.sendToQueue(queueName, Buffer.from(msg));
-            console.log(`Sent: ${msg}`)
-            setTimeout(() => {
-                res.sendStatus(200)
-                conn.close();
-            }, 500);
-        });
-    });
-});
 
 
 const PORT = process.env.PORT || 3000;
