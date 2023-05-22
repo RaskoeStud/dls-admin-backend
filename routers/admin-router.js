@@ -1,4 +1,5 @@
 import express from "express";
+import bcrypt from "bcrypt";
 import conn from "./startConnection.js";
 import bcrypt from "bcrypt";
 
@@ -92,6 +93,7 @@ export async function getDeletedAdmins() {
     }
 }
 // Create an new admin
+
 router.post("/admin", async (req, res) => {
     try{
         const result = await createAdmin();
@@ -101,6 +103,7 @@ router.post("/admin", async (req, res) => {
         res.status(500).send("Something went wrong");
     }
 });
+
 
 export async function createAdmin(values) {
     values.pass = await bcrypt.hash(values.pass, 10);

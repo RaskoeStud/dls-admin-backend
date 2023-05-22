@@ -1,6 +1,7 @@
 import express from "express";
 import { getAdmins, getAdminById, getDeletedAdmins, createAdmin, updateAdmin, deleteAdmin } from "./routers/admin-router.js";
 import userRouter from "./routers/admin-router.js";
+import authRouter from "./routers/auth-router.js";
 import customerRouter from "./routers/customer-router.js";
 import { sendToQueueFunc } from "./routers/customer-router.js";
 import swaggerUi from "swagger-ui-express";
@@ -13,6 +14,7 @@ import fs from "fs";
 const app = express();
 app.use(express.json());
 app.use(userRouter);
+app.use(authRouter);
 app.use(customerRouter);
 
 // GRAPHQL
@@ -159,7 +161,6 @@ const options = {
 
 const specs = swaggerJsdoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
-
 
 const PORT = process.env.PORT || 3000;
 

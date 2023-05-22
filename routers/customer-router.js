@@ -6,7 +6,6 @@ import { ServiceBusClient } from "@azure/service-bus";
 const router = express.Router();
 router.use(express.json());
 
-
 async function sendToQueue(queueName, msg, bodyValue){
     const connectionString = process.env.AZURE_SERVICE_BUS;
     const responseQueueName = "responsecm";
@@ -46,7 +45,6 @@ async function sendToQueue(queueName, msg, bodyValue){
 
 export async function sendToQueueFunc(value){
     return await sendToQueue("customercm", value.typeOfMessage, value.body);
-
 }
 
 export default router;
