@@ -59,6 +59,22 @@ router.post("/rabbit/customers/", async (req, res) => {
     res.status(200).send("Request sent to RabbitMQ");
 });
 
+// Get all admins
+router.get("/admins", async (req, res) => {
+    conn.getConnection(function (err, connection) {
+        connection.query('SELECT * FROM admins a JOIN admins_data ad ON a.id = ad.admin_id WHERE (ad.admin_id, ad.snap_timestamp) IN (SELECT admin_id, MAX(snap_timestamp) FROM admins_data GROUP BY admin_id) AND a.deleted=false;', function (err, results) {
+            if (err) {
+                connection.release();
+                throw err;
+            }
+            else console.log('Selected ' + results.length + ' row(s).');
+            res.status(200).send(results);
+            connection.release();
+            console.log('--- Selecting all active admins done! ---');
+        });
+    });
+});
+
 // Get a single admin by id
 router.get("/admins/:id", async (req, res) => { 
     conn.getConnection(function (err, connection) {
@@ -104,7 +120,7 @@ router.get("/admins_deleted", async (req, res) => {
 });
 
 // Create an new admin
-router.post("/admin", async (req, res) => {
+router.post("/add_admin", async (req, res) => {
     conn.getConnection(function (err, connection) {
         if (err) {connection.release();throw err}
         const insert_admins = 'INSERT INTO admins () VALUES ();';

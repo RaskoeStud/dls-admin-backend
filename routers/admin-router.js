@@ -1,4 +1,5 @@
 import express from "express";
+import bcrypt from "bcrypt";
 import conn from "./startConnection.js";
 
 const router = express.Router();
@@ -72,9 +73,10 @@ router.get("/admins_deleted", async (req, res) => {
 });
 
 // Create an new admin
-router.post("/admin", async (req, res) => {
-    conn.getConnection(function (err, connection) {
+router.post("/add_admin", async (req, res) => {
+    conn.getConnection(async function (err, connection) {
         if (err) {connection.release();throw err}
+        const encrypt_pass = await bcrypt.hash(req.body.password, 10);
         const insert_admins = 'INSERT INTO admins () VALUES ();';
         const select_last = 'SELECT LAST_INSERT_ID();'
         const insert_admins_data = 'INSERT INTO admins_data (admin_id, username, email, pass) VALUES (?,?,?,?);';
@@ -88,7 +90,7 @@ router.post("/admin", async (req, res) => {
 
 
                 connection.query(insert_admins_data, 
-                    [lastInsertedId, req.body.username, req.body.email, req.body.password], function (err, results, fields) {
+                    [lastInsertedId, req.body.username, req.body.email, encrypt_pass], function (err, results, fields) {
                         if (err) {connection.release();throw err}
                         console.log('--- admin has been added! ---\n ', results);
                     });
@@ -101,11 +103,12 @@ router.post("/admin", async (req, res) => {
 
 // Update an admin
 router.post("/update_admin", async (req, res) => {
-    conn.getConnection(function (err, connection) {
+    conn.getConnection(async function (err, connection) {
         if (err) {connection.release();throw err}
+        const encrypt_pass = await bcrypt.hash(req.body.password, 10);
         const update_admins_data = 'INSERT INTO admins_data (admin_id, username, email, pass) VALUES (?,?,?,?);';
         connection.query(update_admins_data, 
-            [req.body.id, req.body.username, req.body.email, req.body.password], 
+            [req.body.id, req.body.username, req.body.email, encrypt_pass], 
             function (err, results) {
                 if (err) {connection.release();throw err}
                 console.log('--- admin has been updated! ---\n ', results);
