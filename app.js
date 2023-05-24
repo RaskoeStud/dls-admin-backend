@@ -10,12 +10,15 @@ import swaggerJsdoc from "swagger-jsdoc";
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 import fs from "fs";
+import morganMiddleware from './middleware/morgan-middleware.js';
+import logger from "./utils/logger.js";
 
 const app = express();
 app.use(express.json());
 app.use(userRouter);
 app.use(authRouter);
 app.use(customerRouter);
+app.use(morganMiddleware);
 
 // GRAPHQL
 const typeDefs = fs.readFileSync('./graphql/schema.graphql', 'utf8');
@@ -23,112 +26,112 @@ const typeDefs = fs.readFileSync('./graphql/schema.graphql', 'utf8');
 const resolvers = {
     Query: {
         GetAdmins: async () => {
-            try{
+            try {
                 const admins = await getAdmins();
-                console.log(admins)
+                logger.verbose(admins)
                 return admins;
-            } catch(err) {
-                console.log(err);
+            } catch (err) {
+                logger.error(err);
             }
         },
-        GetAdminById: async (_, {admin_id}) => {
-            try{
+        GetAdminById: async (_, { admin_id }) => {
+            try {
                 const admin = await getAdminById(admin_id);
                 return admin;
-            }catch(err){
-                console.log(err);
+            } catch (err) {
+                logger.error(err);
             }
         },
         GetDeletedAdmins: async () => {
-            try{
+            try {
                 const admins = await getDeletedAdmins();
                 return admins;
-            } catch(err) {
-                console.log(err);
+            } catch (err) {
+                logger.error(err);
             }
         },
-        CreateAdmin: async (_, {username, email, pass}) => {
-            try{
-                const values = {username, email, pass};
+        CreateAdmin: async (_, { username, email, pass }) => {
+            try {
+                const values = { username, email, pass };
                 const admin = await createAdmin(values);
                 return admin;
-            }catch(err){
-                console.log(err);
+            } catch (err) {
+                logger.error(err);
             }
         },
-        UpdateAdmin: async (_, {admin_id, username, email, pass}) => {
-            try{
-                const values = {admin_id, username, email, pass};
+        UpdateAdmin: async (_, { admin_id, username, email, pass }) => {
+            try {
+                const values = { admin_id, username, email, pass };
                 const admin = await updateAdmin(values);
                 return admin;
-            }catch(err){
-                console.log(err);
+            } catch (err) {
+                logger.error(err);
             }
         },
-        DeleteAdmin: async (_, {admin_id}) => {
-            try{
+        DeleteAdmin: async (_, { admin_id }) => {
+            try {
                 const admin = await deleteAdmin(admin_id);
                 return admin;
-            }catch(err){
-                console.log(err);
+            } catch (err) {
+                logger.error(err);
             }
         },
         GetCustomers: async () => {
-            try{
-                const msg = {typeOfMessage:"readAll", body: {"Read": "GotAll"}};
+            try {
+                const msg = { typeOfMessage: "readAll", body: { "Read": "GotAll" } };
                 return await sendToQueueFunc(msg);
-            } catch(err) {
-                console.log(err);
+            } catch (err) {
+                logger.error(err);
             }
         },
-        GetCustomerById: async (_, {customer_id}) => {
-            try{
-                const msg = {typeOfMessage:"readSingle", body: {id: customer_id}};
+        GetCustomerById: async (_, { customer_id }) => {
+            try {
+                const msg = { typeOfMessage: "readSingle", body: { id: customer_id } };
                 const result = await sendToQueueFunc(msg);
-                console.log("THIS IS THE RESULT: ", result);
+                logger.verbose("THIS IS THE RESULT: ", result);
                 return result;
-            }catch(err){
-                console.log(err);
+            } catch (err) {
+                logger.error(err);
             }
         },
         GetDeletedCustomers: async () => {
-            try{
-                const msg = {typeOfMessage:"readDeleted", body: {Read: "Deleted"}};
+            try {
+                const msg = { typeOfMessage: "readDeleted", body: { Read: "Deleted" } };
                 const result = await sendToQueueFunc(msg);
-                console.log("THIS IS THE RESULT: ", result);
+                logger.verbose("THIS IS THE RESULT: ", result);
                 return result;
-            } catch(err) {
-                console.log(err);
+            } catch (err) {
+                logger.error(err);
             }
         },
-        CreateCustomer: async (_, {firstname, lastname, age, email, password}) => {
-            try{
-                const msg = {typeOfMessage:"create", body: {firstname, lastname, age, email, password}};
+        CreateCustomer: async (_, { firstname, lastname, age, email, password }) => {
+            try {
+                const msg = { typeOfMessage: "create", body: { firstname, lastname, age, email, password } };
                 const result = await sendToQueueFunc(msg);
-                console.log("THIS IS THE RESULT: ", result);
+                logger.verbose("THIS IS THE RESULT: ", result);
                 return result;
-            } catch(err) {
-                console.log(err);
+            } catch (err) {
+                logger.error(err);
             }
         },
-        UpdateCustomer: async (_, {customer_id, firstname, lastname, age, email, password}) => {
-            try{
-                const msg = {typeOfMessage:"update", body: {customer_id, firstname, lastname, age, email, password}};
+        UpdateCustomer: async (_, { customer_id, firstname, lastname, age, email, password }) => {
+            try {
+                const msg = { typeOfMessage: "update", body: { customer_id, firstname, lastname, age, email, password } };
                 const result = await sendToQueueFunc(msg);
-                console.log("THIS IS THE RESULT: ", result);
+                logger.verbose("THIS IS THE RESULT: ", result);
                 return result;
-            } catch(err) {
-                console.log(err);
+            } catch (err) {
+                logger.error(err);
             }
         },
-        DeleteCustomer: async (_, {customer_id}) => {
-            try{
-                const msg = {typeOfMessage:"delete", body: {id: customer_id}};
+        DeleteCustomer: async (_, { customer_id }) => {
+            try {
+                const msg = { typeOfMessage: "delete", body: { id: customer_id } };
                 const result = await sendToQueueFunc(msg);
-                console.log("THIS IS THE RESULT: ", result);
+                logger.verbose("THIS IS THE RESULT: ", result);
                 return result;
-            } catch(err) {
-                console.log(err);
+            } catch (err) {
+                logger.error(err);
             }
         }
     },
@@ -139,13 +142,11 @@ const server = new ApolloServer({
     resolvers,
 });
 
-
-
 // SWAGGER
 const options = {
     definition: {
         openapi: "3.0.0",
-        info: {	
+        info: {
             title: "Customer API",
             version: "1.0.0",
             description: "A simple Express Library API for customers",
@@ -164,7 +165,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 const PORT = process.env.PORT || 3000;
 
-const { url } = await startStandaloneServer(server, {listen: { port: PORT },});
-  console.log(`🚀  Server ready at: ${url}`);
+const { url } = await startStandaloneServer(server, { listen: { port: PORT }, });
+logger.verbose(`🚀  Server ready at: ${url}`);
 
 //app.listen(PORT, () => console.log("Server running on:", PORT));

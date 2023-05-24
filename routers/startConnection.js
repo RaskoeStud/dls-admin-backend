@@ -1,7 +1,8 @@
 import mysql from 'mysql2/promise';
 import * as dotenv from 'dotenv';
+import logger from '../utils/logger.js'
 dotenv.config();
- 
+
 // Create connection to mysql database and import where its needed
 
 let pool = mysql.createPool({
@@ -19,16 +20,14 @@ let pool = mysql.createPool({
 async function testDBConnection() {
     const connection = await pool.getConnection();
     try {
-        console.log("Connected to database");
+        logger.info("Connected to database");
     }
     catch (err) {
-        console.log("Could not connect to database");
+        logger.info("Could not connect to database");
         process.exit(1);
     }
 }
 
 testDBConnection();
-
-
 
 export default pool;
