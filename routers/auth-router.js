@@ -1,50 +1,73 @@
 import express from "express";
 import bcrypt from "bcrypt";
 import conn from "./startConnection.js";
-import logger from "../utils/logger.js";
+import jwt from "jsonwebtoken";
+import logger from '../utils/logger.js';
+import dotenv from "dotenv";
 
+dotenv.config();
 const router = express.Router();
 router.use(express.json());
 
 // Login router
 router.post("/auth/login", async (req, res) => {
-    logger.info("Login request received");
-    logger.verbose(req.body)
-    conn.getConnection(function (err, connection) {
-        if (err) {
-            logger.error("Error connecting to the database: ", err);
-            throw err;
+    console.log("Login request received");
+    if (!req.body.username || !req.body.password) {
+        res.status(400).send("Missing email or password");
+        return;
+    }
+    const connection = await conn.getConnection();
+    try{
+        console.log("enter before query")
+        const select_customer = 'SELECT * FROM customers c JOIN customers_data cd ON c.id = cd.customer_id WHERE (cd.customer_id, cd.snap_timestamp) IN (SELECT customer_id, MAX(snap_timestamp) FROM customers_data GROUP BY customer_id) AND c.deleted=false AND cd.email=?;';
+        const [rows] = await connection.query(select_customer, [req.body.email]);
+        if(rows.length === 0) {
+            res.status(404).send("customer not found");
+            connection.release();
+        }else{
+            console.log('customer with name: ' + rows[0].first_name + ' selected!\n ', rows)
+            const bcryptValue = await bcrypt.compare(req.body.password, rows[0].pass);
+            if(bcryptValue === true) {
+                let token = await generateAccessToken(rows[0].first_name);
+                console.log(token)
+                const payload = {
+                    "customer_id": rows[0].customer_id,
+                    "first_name": rows[0].first_name,
+                    "last_name": rows[0].last_name,
+                    "age": rows[0].age,
+                    "email": rows[0].email,
+                    "jwttoken": token
+                }
+                res.status(200).send(payload);
+                connection.release();
+            }else{
+                res.status(401).send("Wrong credentials");
+                connection.release();
+            }
         }
-        const select_admin = 'SELECT * FROM admins a JOIN admins_data ad ON a.id = ad.admin_id WHERE (ad.admin_id, ad.snap_timestamp) IN (SELECT admin_id, MAX(snap_timestamp) FROM admins_data GROUP BY admin_id) AND a.deleted=false AND ad.username=?;';
-        connection.query(select_admin, [req.body.username], function (err, result) {
-            if (err) {
-                logger.error("Error executing the query: ", err);
-                connection.release();
-                throw err;
-            }
-            if (result.length === 0) {
-                res.status(404).send("admin not found");
-                connection.release();
-            } else {
-                logger.verbose('admin with username: ' + req.body.username + ' selected!\n ', result)
-                bcrypt.compare(req.body.password, result[0].pass, function (err, result1) {
-                    if (err) {
-                        logger.error("Password error: ", err);
-                        connection.release();
-                        throw err;
-                    }
-                    if (result1 === true) {
-
-                        res.status(200).send([result[0].admin_id, result[0].username, result[0].email, result[0].is_superuser],);
-                        connection.release();
-                    } else {
-                        res.status(401).send("Wrong password");
-                        connection.release();
-                    }
-                });
-            }
-        });
-    });
+    }catch(err){
+            connection.release();
+            throw err;
+    }
 });
+
+// Authentication router
+
+export async function generateAccessToken(user) {
+    return jwt.sign({user}, process.env.JWT_TOKEN, {expiresIn: '1800s'});
+}
+
+export async function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    if (token == null) return res.sendStatus(401);
+
+    jwt.verify(token, process.env.JWT_TOKEN, (err, user) => {
+        if (err) return res.sendStatus(403);
+
+        req.user = user;
+        next();
+    });
+}
 
 export default router;
