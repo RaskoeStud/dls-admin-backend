@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcrypt";
 import conn from "./startConnection.js";
 import logger from "../utils/logger.js";
+import { authenticateToken } from "./auth-router.js";
 
 const router = express.Router();
 router.use(express.json());
@@ -13,7 +14,7 @@ router.get("/", (req, res) => {
 
 
 // Get all admins
-router.get("/admins", async (req, res) => {
+router.get("/admins", authenticateToken, async (req, res) => {
     try {
         const result = await getAdmins();
         if (result.length == 0) {
@@ -38,7 +39,7 @@ export async function getAdmins() {
     }
 }
 // Get a single admin by id
-router.get("/admins/:id", async (req, res) => {
+router.get("/admins/:id", authenticateToken, async (req, res) => {
     try {
         const result = await getAdminById(req.params.id);
         if (result.length == 0) {
@@ -67,7 +68,7 @@ export async function getAdminById(id) {
 }
 
 // Get all deleted admins
-router.get("/admins_deleted", async (req, res) => {
+router.get("/admins_deleted", authenticateToken, async (req, res) => {
     try {
         const result = await getDeletedAdmins();
         if (result.length == 0) {
@@ -94,7 +95,7 @@ export async function getDeletedAdmins() {
 }
 
 // Create an new admin
-router.post("/admin", async (req, res) => {
+router.post("/admin", authenticateToken, async (req, res) => {
     try {
         const result = await createAdmin();
         res.status(200).send("admin created: ", result);
@@ -125,7 +126,7 @@ export async function createAdmin(values) {
 }
 
 // Update an admin
-router.post("/update_admin", async (req, res) => {
+router.post("/update_admin", authenticateToken, async (req, res) => {
     try {
         const result = await updateAdmin();
         res.status(200).send("admin updated: ", result);
@@ -150,7 +151,7 @@ export async function updateAdmin(values) {
     }
 }
 // Delete an admin
-router.post("/delete_admin", async (req, res) => {
+router.post("/delete_admin", authenticateToken, async (req, res) => {
     try {
         const result = await deleteAdmin();
         res.status(200).send("admin deleted: ", result);

@@ -1,6 +1,4 @@
 import express from "express";
-import conn from "./startConnection.js";
-import amqp from 'amqplib/callback_api.js';
 import { ServiceBusClient } from "@azure/service-bus";
 import logger from "../utils/logger.js";
 
