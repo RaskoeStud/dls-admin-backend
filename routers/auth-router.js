@@ -19,24 +19,22 @@ router.post("/auth/login", async (req, res) => {
     const connection = await conn.getConnection();
     try{
         console.log("enter before query")
-        const select_customer = 'SELECT * FROM customers c JOIN customers_data cd ON c.id = cd.customer_id WHERE (cd.customer_id, cd.snap_timestamp) IN (SELECT customer_id, MAX(snap_timestamp) FROM customers_data GROUP BY customer_id) AND c.deleted=false AND cd.email=?;';
-        const [rows] = await connection.query(select_customer, [req.body.email]);
+        const select_admin = 'SELECT * FROM admins a JOIN admins_data ad ON a.id = ad.admin_id WHERE (ad.admin_id, ad.snap_timestamp) IN (SELECT admin_id, MAX(snap_timestamp) FROM admins_data GROUP BY admin_id) AND a.deleted=false AND ad.username=?;';
+        const [rows] = await connection.query(select_admin, [req.body.username]);
         if(rows.length === 0) {
-            res.status(404).send("customer not found");
+            res.status(404).send("admin not found");
             connection.release();
         }else{
-            console.log('customer with name: ' + rows[0].first_name + ' selected!\n ', rows)
+            console.log('admin with name: ' + rows[0].username + ' selected!\n ', rows)
             const bcryptValue = await bcrypt.compare(req.body.password, rows[0].pass);
             if(bcryptValue === true) {
-                let token = await generateAccessToken(rows[0].first_name);
-                console.log(token)
+                let token = await generateAccessToken(rows[0].username);
                 const payload = {
-                    "customer_id": rows[0].customer_id,
-                    "first_name": rows[0].first_name,
-                    "last_name": rows[0].last_name,
-                    "age": rows[0].age,
+                    "jwttoken": token,
+                    "admin_id": rows[0].admin_id,
+                    "username": rows[0].username,
                     "email": rows[0].email,
-                    "jwttoken": token
+                    "is_superuser": rows[0].is_admin,
                 }
                 res.status(200).send(payload);
                 connection.release();
