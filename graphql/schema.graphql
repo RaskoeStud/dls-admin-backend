@@ -1,20 +1,6 @@
-#graphql
-  # Comments in GraphQL strings (such as this one) start with the hash (#) symbol.
-
-  # This "Book" type defines the queryable fields for every book in our data source.
-
-  type Book {
-    title: String
-    author: String
-  }
-
-  # The "Query" type is special: it lists all of the available queries that
-  # clients can execute, along with the return type for each. In this
-  # case, the "books" query returns an array of zero or more Books (defined above).
 # --- Queries ---
 type Query {   
     # Admins
-    Login(username: String!, pass: String!): AdminCombined
     GetAdmins: [AdminCombined]
     GetAdminById(admin_id: Int!): AdminCombinedById
     GetDeletedAdmins: [AdminCombined]
@@ -25,11 +11,14 @@ type Query {
     GetCustomers: [CustomerCombined]
     GetCustomerById(customer_id: Int!): CustomerCombined
     GetDeletedCustomers: [CustomerCombined]
-    CreateCustomer(firstname: String!, lastname: String!, age: Int!, email: String!, password: String!): CustomerCreationCombined
     # Look into properly not setting all as required
+
+}
+type Mutation{
+    Login(username: String!, pass: String!): AdminLogin
+    CreateCustomer(firstname: String!, lastname: String!, age: Int!, email: String!, password: String!): customerCreationResult
     UpdateCustomer(customer_id: Int!, firstname: String!, lastname: String!, age: Int!, email: String!, password: String!): CustomerCreationCombined
     DeleteCustomer(customer_id: Int!): CustomerCombined
-
 }
 
 # --- Mutations ---
@@ -87,7 +76,17 @@ type CustomerCreationCombined {
     snap_timestamp: String
 }
 
-type Login{
-    username: String!
-    pass: String!
+type AdminLogin {
+    admin_id: Int
+    username: String
+    email: String
+    is_superuser: Boolean
+    jwttoken: String
+}
+type customerCreationResult {
+    firstname: String
+    lastname: String
+    age: Int
+    email: String
+    password: String
 }

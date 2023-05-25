@@ -27,16 +27,6 @@ const typeDefs = fs.readFileSync('./graphql/schema.graphql', 'utf8');
 
 const resolvers = {
     Query: {
-        Login: async (_, { username, pass }) => {
-            try {
-                const msg = {"username":username, "password":pass}
-                const loginData = await loginAdmin(msg);
-                console.log("loginData", loginData.msg)
-                return loginData.msg;
-            } catch (err) {
-                logger.error(err);
-            }
-        },
         GetAdmins: async () => {
             try {
                 const admins = await getAdmins();
@@ -90,10 +80,13 @@ const resolvers = {
         },
         GetCustomers: async () => {
             try {
-                const msg = { typeOfMessage: "readAll", body: { "Read": "GotAll" } };
-                return await sendToQueueFunc(msg);
+                const msg = { typeOfMessage: "readAll", body: { Read: "GotAll" } };
+                console.log(msg)
+                const response = await sendToQueueFunc(msg);
+                console.log(response);
+                return response
             } catch (err) {
-                logger.error(err);
+                logger.error("something error", err);
             }
         },
         GetCustomerById: async (_, { customer_id }) => {
@@ -116,10 +109,26 @@ const resolvers = {
                 logger.error(err);
             }
         },
+    },
+    Mutation: {
+        Login: async (_, { username, pass }) => {
+            try {
+                const msg = {"username":username, "password":pass}
+                const loginData = await loginAdmin(msg);
+                console.log(loginData.msg)
+                return loginData.msg;
+            } catch (err) {
+                logger.error(err);
+            }
+        },
         CreateCustomer: async (_, { firstname, lastname, age, email, password }) => {
             try {
                 const msg = { typeOfMessage: "create", body: { firstname, lastname, age, email, password } };
+                console.log("msg:", msg)
                 const result = await sendToQueueFunc(msg);
+                if(result === "customer added") {
+                    return {firstname: firstname, lastname: lastname, age: age, email: email, password: password}
+                    }
                 logger.verbose("THIS IS THE RESULT: ", result);
                 return result;
             } catch (err) {
@@ -146,7 +155,7 @@ const resolvers = {
                 logger.error(err);
             }
         }
-    },
+    }
 };
 
 const server = new ApolloServer({
