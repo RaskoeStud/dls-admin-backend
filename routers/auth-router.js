@@ -49,7 +49,7 @@ export async function loginAdmin(values){
                     "admin_id": rows[0].admin_id,
                     "username": rows[0].username,
                     "email": rows[0].email,
-                    "is_superuser": rows[0].is_admin,
+                    "is_superuser": rows[0].is_superuser,
                 }
                 connection.release();
                 return {status:200, msg:payload}
