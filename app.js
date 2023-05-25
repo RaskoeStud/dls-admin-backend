@@ -13,6 +13,7 @@ import { startStandaloneServer } from '@apollo/server/standalone';
 import fs from "fs";
 import morganMiddleware from './middleware/morgan-middleware.js';
 import logger from "./utils/logger.js";
+import { log } from "console";
 
 const app = express();
 app.use(express.json());
@@ -30,7 +31,8 @@ const resolvers = {
             try {
                 const msg = {"username":username, "password":pass}
                 const loginData = await loginAdmin(msg);
-                return loginData;
+                console.log("loginData", loginData.msg)
+                return loginData.msg;
             } catch (err) {
                 logger.error(err);
             }
