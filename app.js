@@ -2,6 +2,7 @@ import express from "express";
 import { getAdmins, getAdminById, getDeletedAdmins, createAdmin, updateAdmin, deleteAdmin } from "./routers/admin-router.js";
 import userRouter from "./routers/admin-router.js";
 import authRouter from "./routers/auth-router.js";
+import { loginAdmin } from "./routers/auth-router.js";
 import customerRouter from "./routers/customer-router.js";
 import { sendToQueueFunc } from "./routers/customer-router.js";
 import swaggerUi from "swagger-ui-express";
@@ -25,6 +26,15 @@ const typeDefs = fs.readFileSync('./graphql/schema.graphql', 'utf8');
 
 const resolvers = {
     Query: {
+        Login: async (_, { username, pass }) => {
+            try {
+                const msg = {"username":username, "password":pass}
+                const loginData = await loginAdmin(msg);
+                return loginData;
+            } catch (err) {
+                logger.error(err);
+            }
+        },
         GetAdmins: async () => {
             try {
                 const admins = await getAdmins();

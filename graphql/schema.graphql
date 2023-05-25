@@ -14,6 +14,7 @@
 # --- Queries ---
 type Query {   
     # Admins
+    Login(username: String!, pass: String!): AdminCombined
     GetAdmins: [AdminCombined]
     GetAdminById(admin_id: Int!): AdminCombinedById
     GetDeletedAdmins: [AdminCombined]
@@ -84,4 +85,9 @@ type CustomerCreationCombined {
     email: String
     password: String
     snap_timestamp: String
+}
+
+type Login{
+    username: String!
+    pass: String!
 }
